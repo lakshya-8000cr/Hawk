@@ -38,10 +38,16 @@ var analyzeCmd = &cobra.Command{
 			return err
 		}
 
-		deploymentRepo :=
-			repository.NewKubernetesDeploymentRepository(client)
+deploymentRepo :=
+	repository.NewKubernetesDeploymentRepository(client)
 
-		analyzer := service.NewAnalyzer(deploymentRepo)
+replicaSetRepo :=
+	repository.NewKubernetesReplicaSetRepository(client)
+
+analyzer := service.NewAnalyzer(
+	deploymentRepo,
+	replicaSetRepo,
+)
 
 		ctx, cancel := context.WithTimeout(
 			context.Background(),
@@ -58,16 +64,31 @@ var analyzeCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println()
-		fmt.Println("HAWK   Deployment Analysis")
-		fmt.Println()
-		fmt.Println("Name:               ", result.Name)
-		fmt.Println("Namespace:          ", result.Namespace)
-		fmt.Println("UID:                ", result.UID)
-		fmt.Println("Desired replicas:   ", result.DesiredReplicas)
-		fmt.Println("Available replicas: ", result.AvailableReplicas)
-		fmt.Println("Selector:           ", result.Selector)
-		fmt.Println()
+deployment := result.Deployment
+
+fmt.Println()
+fmt.Println("HAWK   Impact Analysis")
+fmt.Println()
+fmt.Printf("Target: Deployment/%s\n", deployment.Name)
+fmt.Printf("Namespace: %s\n", deployment.Namespace)
+fmt.Println()
+
+fmt.Println("Directly owned:")
+
+if len(result.ReplicaSets) == 0 {
+	fmt.Println("  No ReplicaSets found")
+} else {
+	for _, rs := range result.ReplicaSets {
+		fmt.Printf(
+			"  └── ReplicaSet/%s  replicas(%d) ready(%d)\n",
+			rs.Name,
+			rs.Replicas,
+			rs.ReadyCount,
+		)
+	}
+}
+
+fmt.Println()
 
 		return nil
 	},
