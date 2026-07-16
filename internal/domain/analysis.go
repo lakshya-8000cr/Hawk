@@ -7,8 +7,8 @@ type DeploymentAnalysis struct {
 	ReplicaSets []ReplicaSet
 	Pods        []Pod
 	Services    []Service
-	Graph       *graph.Graph
 	Ingresses   []Ingress
+	Graph       *graph.Graph
+	Impact      *ImpactReport
 }
-
 // typically micrservice behaviour

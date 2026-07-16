@@ -199,6 +199,12 @@ func (a *Analyzer) AnalyzeDeployment(
 		}
 	}
 
+	// 11. Run structural calculation targeting the complete system impact
+	impactReport, err := AnalyzeImpact(resourceGraph, deploymentNode.ID)
+	if err != nil {
+		return nil, fmt.Errorf("analyze blast radius: %w", err)
+	}
+
 	return &domain.DeploymentAnalysis{
 		Deployment:  deployment,
 		ReplicaSets: replicaSets,
@@ -206,5 +212,6 @@ func (a *Analyzer) AnalyzeDeployment(
 		Services:    matchedServices,
 		Ingresses:   matchedIngresses,
 		Graph:       resourceGraph,
+		Impact:      impactReport,
 	}, nil
 }

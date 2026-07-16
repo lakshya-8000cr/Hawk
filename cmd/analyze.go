@@ -7,17 +7,28 @@ import (
 	"time"
 
 	"hawk/internal/kube"
-	"hawk/internal/repositry" // Fixed typo in import path from "repositry"
+	"hawk/internal/repositry"
 	"hawk/internal/service"
 
 	"github.com/spf13/cobra"
+)
+
+const (
+	colorReset  = "\033[0m"
+	colorBold   = "\033[1m"
+	colorDim    = "\033[2m"
+	colorCyan   = "\033[36m"
+	colorBlue   = "\033[34m"
+	colorYellow = "\033[33m"
+	colorRed    = "\033[31m"
+	colorGreen  = "\033[32m"
 )
 
 var namespace string
 
 var analyzeCmd = &cobra.Command{
 	Use:   "analyze deployment <name>",
-	Short: "Analyze a Kubernetes resource",
+	Short: "Analyze a Kubernetes resource blast radius",
 	Args:  cobra.ExactArgs(2),
 
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -40,9 +51,9 @@ var analyzeCmd = &cobra.Command{
 
 		deploymentRepo := repository.NewKubernetesDeploymentRepository(client)
 		replicaSetRepo := repository.NewKubernetesReplicaSetRepository(client)
-		podRepo := repository.NewKubernetesPodRepository(client)
-		serviceRepo := repository.NewKubernetesServiceRepository(client)
-		ingressRepo := repository.NewKubernetesIngressRepository(client)
+		podRepo        := repository.NewKubernetesPodRepository(client)
+		serviceRepo    := repository.NewKubernetesServiceRepository(client)
+		ingressRepo    := repository.NewKubernetesIngressRepository(client)
 
 		analyzer := service.NewAnalyzer(
 			deploymentRepo,
@@ -62,24 +73,46 @@ var analyzeCmd = &cobra.Command{
 
 		deployment := result.Deployment
 
+	// Color ANSI definitions (use your project's color variables)
+	const colorCyan = "\033[36m"
+	const colorDim = "\033[2m"
+	const colorBold = "\033[1m"
+	const colorReset = "\033[0m"
+
+// --- 1. PRO-LOOK GEOMETRIC HAWK BIRD IN FLIGHT ASCII BANNER ---
+	fmt.Println()
+	fmt.Printf("%s                /\\   \n", colorCyan)
+	fmt.Printf("%s|\\ _          _/  \\_           ____/|   %s  _    _    _     __  __ %s\n", colorCyan, colorBold, colorReset)
+	fmt.Printf("%s \\_ \\__       \\    /       ___/ ___/    %s | |  | |  / \\    | |/ / %s.io\n", colorCyan, colorBold, colorReset)
+	fmt.Printf("%s   \\__ \\____   \\  /   ____/ ___/        %s | |__| | / _ \\   | ' /  %s\n", colorCyan, colorBold, colorReset)
+	fmt.Printf("%s      \\____    /  \\    ____/            %s |  __  |/ ___ \\  | . \\  %s\n", colorDim, colorBold, colorReset)
+	fmt.Printf("%s           \\__/    \\__/                 %s |_|  |_/_/   \\_\\|_|\\_\\ %s\n", colorDim, colorBold, colorReset)
+	fmt.Printf("%s              |    |                %s\n", colorDim, colorReset)
+	fmt.Printf("%s              |    |         %s\n", colorDim, colorReset)
+	fmt.Printf("%s               \\   /\n", colorDim)             
+	fmt.Printf("%s                \\ /\n", colorDim)
+	fmt.Println()
+
+		// --- 2. EXECUTION CONTEXT BLOCK ---
+		fmt.Printf("%sexecution:%s clusterscope\n", colorCyan, colorReset)
+		fmt.Printf("   %starget:%s Deployment/%s\n", colorDim, colorReset, deployment.Name)
+		fmt.Printf("%snamespace:%s %s\n", colorDim, colorReset, deployment.Namespace)
+		fmt.Printf("     %stime:%s %s\n", colorDim, colorReset, time.Now().Format(time.RFC1123))
 		fmt.Println()
-		fmt.Println("HAWK   Impact Analysis")
-		fmt.Println()
-		fmt.Printf("Target: Deployment/%s\n", deployment.Name)
-		fmt.Printf("Namespace: %s\n", deployment.Namespace)
+		fmt.Printf("%s--------------------------------------------------------%s\n", colorDim, colorReset)
 		fmt.Println()
 
-		// --- Directly owned output ---
-		fmt.Println("Directly owned:")
+		// --- 3. DIRECTLY OWNED INFRASTRUCTURE ---
+		fmt.Printf("%s%s[1] Directly Owned Resources%s\n", colorBold, colorCyan, colorReset)
 		if len(result.ReplicaSets) == 0 {
-			fmt.Println("  No ReplicaSets found")
+			fmt.Printf("  %sNo ReplicaSets managed by this deployment%s\n", colorDim, colorReset)
 		} else {
 			for _, rs := range result.ReplicaSets {
 				fmt.Printf(
-					"  ├── ReplicaSet/%s  replicas(%d) ready(%d)\n",
-					rs.Name,
-					rs.Replicas,
-					rs.ReadyCount,
+					"  ├── %sReplicaSet/%s%s  replicas(%s%d%s) ready(%s%d%s)\n",
+					colorBold, rs.Name, colorReset,
+					colorYellow, rs.Replicas, colorReset,
+					colorGreen, rs.ReadyCount, colorReset,
 				)
 
 				podFound := false
@@ -88,50 +121,56 @@ var analyzeCmd = &cobra.Command{
 						continue
 					}
 					podFound = true
+					
+					phaseColor := colorGreen
+					if pod.Phase != "Running" {
+						phaseColor = colorYellow
+					}
+					
 					fmt.Printf(
-						"  │   └── Pod/%s  phase(%s) ready(%t) restarts(%d)\n",
-						pod.Name,
-						pod.Phase,
+						"  │   └── %sPod/%s%s  phase(%s%s%s) ready(%t) restarts(%s%d%s)\n",
+						colorDim, pod.Name, colorReset,
+						phaseColor, pod.Phase, colorReset,
 						pod.Ready,
-						pod.Restarts,
+						colorYellow, pod.Restarts, colorReset,
 					)
 				}
 
 				if !podFound {
-					fmt.Println("  │   └── No active Pods")
+					fmt.Printf("  │   └── %sNo active Pods discovered%s\n", colorDim, colorReset)
 				}
 			}
 		}
 
 		fmt.Println()
 
-		// --- Referenced by Services output ---
-		fmt.Println("Referenced by:")
+		// --- 4. NETROUTING REFERENCE BY SERVICES ---
+		fmt.Printf("%s%s[2] Service Mesh Routing%s\n", colorBold, colorCyan, colorReset)
 		if len(result.Services) == 0 {
-			fmt.Println("  No Services currently select these Pods")
+			fmt.Printf("  %sNo Core Services targeting these pods%s\n", colorDim, colorReset)
 		} else {
 			for _, svc := range result.Services {
 				fmt.Printf(
-					"  └── Service/%s  type(%s) clusterIP(%s)\n",
-					svc.Name,
-					svc.Type,
-					svc.ClusterIP,
+					"  └── %sService/%s%s  type(%s%s%s) clusterIP(%s%s%s)\n",
+					colorBold, svc.Name, colorReset,
+					colorCyan, svc.Type, colorReset,
+					colorDim, svc.ClusterIP, colorReset,
 				)
-				fmt.Printf("      selector: %v\n", svc.Selector)
+				fmt.Printf("      %sselector: %v%s\n", colorDim, svc.Selector, colorReset)
 			}
 		}
 
-		// --- Ingress impact output ---
+		// --- 5. EDGE TRAFFIC EXPOSURE ---
 		fmt.Println()
-		fmt.Println("Traffic exposure:")
+		fmt.Printf("%s%s[3] Ingress Traffic Footprint%s\n", colorBold, colorCyan, colorReset)
 		if len(result.Ingresses) == 0 {
-			fmt.Println("  No Ingress routes detected")
+			fmt.Printf("  %sNo Ingress endpoints routes mapped%s\n", colorDim, colorReset)
 		} else {
 			for _, ingress := range result.Ingresses {
 				fmt.Printf(
-					"  └── Ingress/%s  class(%s)\n",
-					ingress.Name,
-					valueOrDefault(ingress.ClassName, "default"),
+					"  └── %sIngress/%s%s  class(%s%s%s)\n",
+					colorBold, ingress.Name, colorReset,
+					colorCyan, valueOrDefault(ingress.ClassName, "default"), colorReset,
 				)
 
 				for _, backend := range ingress.Backends {
@@ -144,22 +183,53 @@ var analyzeCmd = &cobra.Command{
 						path := valueOrDefault(backend.Path, "/")
 
 						fmt.Printf(
-							"      %s%s → Service/%s:%s\n",
-							host,
-							path,
-							backend.ServiceName,
-							backend.ServicePort,
+							"      %s%s%s%s%s → %sService/%s:%s%s\n",
+							colorGreen, host, colorReset,
+							colorBold, path, colorReset,
+							colorDim, backend.ServiceName, backend.ServicePort, colorReset,
 						)
 					}
 				}
 
 				if len(ingress.TLSHosts) > 0 {
-					fmt.Printf("      TLS hosts: %v\n", ingress.TLSHosts)
+					fmt.Printf("      %sTLS hosts: %v%s\n", colorDim, ingress.TLSHosts, colorReset)
 				}
 
 				if len(ingress.LoadBalancerAddresses) > 0 {
-					fmt.Printf("      Addresses: %v\n", ingress.LoadBalancerAddresses)
+					fmt.Printf("      %sEndpoints: %v%s\n", colorDim, ingress.LoadBalancerAddresses, colorReset)
 				}
+			}
+		}
+
+		// --- 6. DYNAMIC BLAST RADIUS RADAR SYSTEM ---
+		fmt.Println()
+		fmt.Printf("%s--------------------------------------------------------%s\n", colorDim, colorReset)
+		fmt.Println()
+		fmt.Printf("%s%s[!] Blast Radius Radar%s\n", colorBold, colorRed, colorReset)
+		fmt.Println()
+
+		riskColor := colorGreen
+		riskText := strings.ToUpper(string(result.Impact.Risk))
+		if riskText == "HIGH" || riskText == "CRITICAL" {
+			riskColor = colorRed
+		} else if riskText == "MEDIUM" || riskText == "WARNING" {
+			riskColor = colorYellow
+		}
+
+		fmt.Printf("  Risk Profile : %s%s%s%s\n", colorBold, riskColor, riskText, colorReset)
+		fmt.Printf("  Summary      : %s\n", result.Impact.Summary)
+		fmt.Println()
+		fmt.Printf("  %sImpact Cascading Tree:%s\n", colorBold, colorReset)
+		
+		if len(result.Impact.Affected) == 0 {
+			fmt.Printf("    %sIsolated workload. No cascading impact risks detected.%s\n", colorDim, colorReset)
+		} else {
+			for _, resource := range result.Impact.Affected {
+				fmt.Printf(
+					"    ├── %s%s/%s%s  relation(%s%s%s)\n",
+					colorBold, resource.Kind, resource.Name, colorReset,
+					colorYellow, resource.Relationship, colorReset,
+				)
 			}
 		}
 
