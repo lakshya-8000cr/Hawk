@@ -8,6 +8,7 @@ type DeploymentAnalysis struct {
 	Pods        []Pod
 	Services    []Service
 	Graph       *graph.Graph
+	Ingresses   []Ingress
 }
 
 // typically micrservice behaviour
