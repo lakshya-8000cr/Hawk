@@ -38,16 +38,20 @@ var analyzeCmd = &cobra.Command{
 			return err
 		}
 
-deploymentRepo :=
-	repository.NewKubernetesDeploymentRepository(client)
+		deploymentRepo :=
+			repository.NewKubernetesDeploymentRepository(client)
 
-replicaSetRepo :=
-	repository.NewKubernetesReplicaSetRepository(client)
+		replicaSetRepo :=
+			repository.NewKubernetesReplicaSetRepository(client)
 
-analyzer := service.NewAnalyzer(
-	deploymentRepo,
-	replicaSetRepo,
-)
+		podRepo :=
+			repository.NewKubernetesPodRepository(client)
+
+		analyzer := service.NewAnalyzer(
+			deploymentRepo,
+			replicaSetRepo,
+			podRepo,
+		)
 
 		ctx, cancel := context.WithTimeout(
 			context.Background(),
@@ -64,31 +68,53 @@ analyzer := service.NewAnalyzer(
 			return err
 		}
 
-deployment := result.Deployment
+		deployment := result.Deployment
 
-fmt.Println()
-fmt.Println("HAWK   Impact Analysis")
-fmt.Println()
-fmt.Printf("Target: Deployment/%s\n", deployment.Name)
-fmt.Printf("Namespace: %s\n", deployment.Namespace)
-fmt.Println()
+		fmt.Println()
+		fmt.Println("HAWK   Impact Analysis")
+		fmt.Println()
+		fmt.Printf("Target: Deployment/%s\n", deployment.Name)
+		fmt.Printf("Namespace: %s\n", deployment.Namespace)
+		fmt.Println()
 
-fmt.Println("Directly owned:")
+		fmt.Println("Directly owned:")
 
-if len(result.ReplicaSets) == 0 {
-	fmt.Println("  No ReplicaSets found")
-} else {
-	for _, rs := range result.ReplicaSets {
-		fmt.Printf(
-			"  └── ReplicaSet/%s  replicas(%d) ready(%d)\n",
-			rs.Name,
-			rs.Replicas,
-			rs.ReadyCount,
-		)
-	}
-}
+		if len(result.ReplicaSets) == 0 {
+			fmt.Println("  No ReplicaSets found")
+		} else {
+			for _, rs := range result.ReplicaSets {
+				fmt.Printf(
+					"  ├── ReplicaSet/%s  replicas(%d) ready(%d)\n",
+					rs.Name,
+					rs.Replicas,
+					rs.ReadyCount,
+				)
 
-fmt.Println()
+				podFound := false
+
+				for _, pod := range result.Pods {
+					if pod.OwnerUID != rs.UID {
+						continue
+					}
+
+					podFound = true
+
+					fmt.Printf(
+						"  │   └── Pod/%s  phase(%s) ready(%t) restarts(%d)\n",
+						pod.Name,
+						pod.Phase,
+						pod.Ready,
+						pod.Restarts,
+					)
+				}
+
+				if !podFound {
+					fmt.Println("  │   └── No active Pods")
+				}
+			}
+		}
+
+		fmt.Println()
 
 		return nil
 	},
