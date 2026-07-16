@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/banner.png" alt="Hawk Banner" width="100%">
+  <img src="Screenshot 2026-07-16 223815.png" alt="Hawk Banner" width="100%">
 </p>
 
 <h1 align="center">Hawk</h1>
