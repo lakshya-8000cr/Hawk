@@ -13,17 +13,20 @@ type Analyzer struct {
 	deployments repository.DeploymentRepository
 	replicaSets repository.ReplicaSetRepository
 	pods        repository.PodRepository
+	services    repository.ServiceRepository
 }
 
 func NewAnalyzer(
 	deployments repository.DeploymentRepository,
 	replicaSets repository.ReplicaSetRepository,
 	pods repository.PodRepository,
+	services repository.ServiceRepository,
 ) *Analyzer {
 	return &Analyzer{
 		deployments: deployments,
 		replicaSets: replicaSets,
 		pods:        pods,
+		services:    services,
 	}
 }
 
@@ -32,7 +35,6 @@ func (a *Analyzer) AnalyzeDeployment(
 	namespace string,
 	name string,
 ) (*domain.DeploymentAnalysis, error) {
-	// 1. Fetch target deployment
 	deployment, err := a.deployments.Get(
 		ctx,
 		namespace,
@@ -42,34 +44,50 @@ func (a *Analyzer) AnalyzeDeployment(
 		return nil, fmt.Errorf("analyze deployment: %w", err)
 	}
 
-	// 2. Fetch ReplicaSets owned by deployment
 	replicaSets, err := a.replicaSets.FindOwnedBy(
 		ctx,
 		namespace,
 		deployment.UID,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("collect owned replicasets: %w", err)
+		return nil, fmt.Errorf(
+			"collect owned replicasets: %w",
+			err,
+		)
 	}
 
-	// 3. Collect ReplicaSet UIDs
 	replicaSetUIDs := make([]string, 0, len(replicaSets))
 
 	for _, replicaSet := range replicaSets {
-		replicaSetUIDs = append(replicaSetUIDs, replicaSet.UID)
+		replicaSetUIDs = append(
+			replicaSetUIDs,
+			replicaSet.UID,
+		)
 	}
 
-	// 4. Fetch Pods owned by those ReplicaSets
 	pods, err := a.pods.FindOwnedBy(
 		ctx,
 		namespace,
 		replicaSetUIDs,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("collect owned pods: %w", err)
+		return nil, fmt.Errorf(
+			"collect owned pods: %w",
+			err,
+		)
 	}
 
-	// 5. Create dependency graph
+	allServices, err := a.services.List(
+		ctx,
+		namespace,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"collect services: %w",
+			err,
+		)
+	}
+
 	resourceGraph := graph.New()
 
 	deploymentNode := graph.NewNode(
@@ -80,10 +98,9 @@ func (a *Analyzer) AnalyzeDeployment(
 
 	resourceGraph.AddNode(deploymentNode)
 
-	// UID -> graph node ID map
 	replicaSetNodeIDs := make(map[string]string)
+	podNodeIDs := make(map[string]string)
 
-	// 6. Deployment -> ReplicaSet edges
 	for _, replicaSet := range replicaSets {
 		replicaSetNode := graph.NewNode(
 			"ReplicaSet",
@@ -92,7 +109,6 @@ func (a *Analyzer) AnalyzeDeployment(
 		)
 
 		resourceGraph.AddNode(replicaSetNode)
-
 		replicaSetNodeIDs[replicaSet.UID] = replicaSetNode.ID
 
 		if err := resourceGraph.AddEdge(graph.Edge{
@@ -107,7 +123,6 @@ func (a *Analyzer) AnalyzeDeployment(
 		}
 	}
 
-	// 7. ReplicaSet -> Pod edges
 	for _, pod := range pods {
 		podNode := graph.NewNode(
 			"Pod",
@@ -116,8 +131,11 @@ func (a *Analyzer) AnalyzeDeployment(
 		)
 
 		resourceGraph.AddNode(podNode)
+		podNodeIDs[pod.UID] = podNode.ID
 
-		replicaSetNodeID, exists := replicaSetNodeIDs[pod.OwnerUID]
+		replicaSetNodeID, exists :=
+			replicaSetNodeIDs[pod.OwnerUID]
+
 		if !exists {
 			continue
 		}
@@ -134,10 +152,59 @@ func (a *Analyzer) AnalyzeDeployment(
 		}
 	}
 
+	matchedServices := make([]domain.Service, 0)
+
+	for _, svc := range allServices {
+		serviceMatched := false
+
+		for _, pod := range pods {
+			if !selectorMatches(
+				svc.Selector,
+				pod.Labels,
+			) {
+				continue
+			}
+
+			if !serviceMatched {
+				matchedServices = append(
+					matchedServices,
+					svc,
+				)
+
+				serviceMatched = true
+			}
+
+			serviceNode := graph.NewNode(
+				"Service",
+				svc.Namespace,
+				svc.Name,
+			)
+
+			resourceGraph.AddNode(serviceNode)
+
+			podNodeID, exists := podNodeIDs[pod.UID]
+			if !exists {
+				continue
+			}
+
+			if err := resourceGraph.AddEdge(graph.Edge{
+				From:         serviceNode.ID,
+				To:           podNodeID,
+				Relationship: graph.Selects,
+			}); err != nil {
+				return nil, fmt.Errorf(
+					"connect service to pod: %w",
+					err,
+				)
+			}
+		}
+	}
+
 	return &domain.DeploymentAnalysis{
 		Deployment:  deployment,
 		ReplicaSets: replicaSets,
 		Pods:        pods,
+		Services:    matchedServices,
 		Graph:       resourceGraph,
 	}, nil
 }

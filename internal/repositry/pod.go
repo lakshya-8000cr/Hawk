@@ -56,6 +56,7 @@ func (r *KubernetesPodRepository) FindOwnedBy(
 	pods := make([]domain.Pod, 0)
 
 	for _, pod := range list.Items {
+
 		for _, owner := range pod.OwnerReferences {
 			if _, exists := ownerSet[string(owner.UID)]; !exists {
 				continue
@@ -64,6 +65,7 @@ func (r *KubernetesPodRepository) FindOwnedBy(
 			var restarts int32
 			for _, status := range pod.Status.ContainerStatuses {
 				restarts += status.RestartCount
+
 			}
 
 			ready := false
@@ -75,6 +77,7 @@ func (r *KubernetesPodRepository) FindOwnedBy(
 			}
 
 			pods = append(pods, domain.Pod{
+				Labels:    pod.Labels,
 				Name:      pod.Name,
 				Namespace: pod.Namespace,
 				UID:       string(pod.UID),

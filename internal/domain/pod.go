@@ -4,6 +4,7 @@ type Pod struct {
 	Name      string
 	Namespace string
 	UID       string
+	Labels    map[string]string
 
 	OwnerUID  string
 	OwnerKind string

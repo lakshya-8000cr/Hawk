@@ -1,5 +1,5 @@
-package domain  // this is typically microservices architecture
-//eve for the structure  we have made a diff file 
+package domain // this is typically microservices architecture
+//eve for the structure  we have made a diff file
 
 type Deployment struct {
 	Name              string

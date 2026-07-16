@@ -47,10 +47,14 @@ var analyzeCmd = &cobra.Command{
 		podRepo :=
 			repository.NewKubernetesPodRepository(client)
 
+		serviceRepo :=
+			repository.NewKubernetesServiceRepository(client)
+
 		analyzer := service.NewAnalyzer(
 			deploymentRepo,
 			replicaSetRepo,
 			podRepo,
+			serviceRepo,
 		)
 
 		ctx, cancel := context.WithTimeout(
@@ -73,8 +77,14 @@ var analyzeCmd = &cobra.Command{
 		fmt.Println()
 		fmt.Println("HAWK   Impact Analysis")
 		fmt.Println()
-		fmt.Printf("Target: Deployment/%s\n", deployment.Name)
-		fmt.Printf("Namespace: %s\n", deployment.Namespace)
+		fmt.Printf(
+			"Target: Deployment/%s\n",
+			deployment.Name,
+		)
+		fmt.Printf(
+			"Namespace: %s\n",
+			deployment.Namespace,
+		)
 		fmt.Println()
 
 		fmt.Println("Directly owned:")
@@ -109,8 +119,33 @@ var analyzeCmd = &cobra.Command{
 				}
 
 				if !podFound {
-					fmt.Println("  │   └── No active Pods")
+					fmt.Println(
+						"  │   └── No active Pods",
+					)
 				}
+			}
+		}
+
+		fmt.Println()
+		fmt.Println("Referenced by:")
+
+		if len(result.Services) == 0 {
+			fmt.Println(
+				"  No Services currently select these Pods",
+			)
+		} else {
+			for _, svc := range result.Services {
+				fmt.Printf(
+					"  └── Service/%s  type(%s) clusterIP(%s)\n",
+					svc.Name,
+					svc.Type,
+					svc.ClusterIP,
+				)
+
+				fmt.Printf(
+					"      selector: %v\n",
+					svc.Selector,
+				)
 			}
 		}
 
