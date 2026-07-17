@@ -61,7 +61,7 @@ var deleteCmd = &cobra.Command{
 
 		ctx, cancel := context.WithTimeout(
 			context.Background(),
-			20*time.Second,
+			60*time.Second,
 		)
 		defer cancel()
 
