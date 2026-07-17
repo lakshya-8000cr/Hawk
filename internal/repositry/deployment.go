@@ -8,6 +8,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	
 )
 
 type DeploymentRepository interface {
@@ -16,6 +17,11 @@ type DeploymentRepository interface {
 		namespace string,
 		name string,
 	) (*domain.Deployment, error)
+	Delete(
+        ctx context.Context,
+        namespace string,
+        name string,
+    ) error
 }
 
 type KubernetesDeploymentRepository struct {
@@ -28,6 +34,27 @@ func NewKubernetesDeploymentRepository(
 	return &KubernetesDeploymentRepository{
 		client: client,
 	}
+}
+
+// this where our main feature will be applied,-
+func (r *KubernetesDeploymentRepository) Delete(
+    ctx context.Context,
+    namespace string,
+    name string,
+) error {
+
+    propagation := metav1.DeletePropagationForeground
+
+    return r.client.
+        AppsV1().
+        Deployments(namespace).
+        Delete(
+            ctx,
+            name,
+            metav1.DeleteOptions{
+                PropagationPolicy: &propagation,
+            },
+        )
 }
 
 func (r *KubernetesDeploymentRepository) Get(
