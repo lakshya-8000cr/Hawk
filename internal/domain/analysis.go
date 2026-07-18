@@ -10,5 +10,7 @@ type DeploymentAnalysis struct {
 	Ingresses   []Ingress
 	Graph       *graph.Graph
 	Impact      *ImpactReport
+	ConfigMaps []ConfigMap
+    Secrets    []Secret
 }
 // typically micrservice behaviour

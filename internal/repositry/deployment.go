@@ -89,5 +89,6 @@ func (r *KubernetesDeploymentRepository) Get(
 		AvailableReplicas: deployment.Status.AvailableReplicas,
 		Labels:            deployment.Labels,
 		Selector:          deployment.Spec.Selector.MatchLabels,
+		Template: deployment.Spec.Template,
 	}, nil
 }

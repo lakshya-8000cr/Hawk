@@ -199,6 +199,49 @@ func printAnalysis(result *domain.DeploymentAnalysis) {
 		}
 	}
 
+
+	// --- 6. CONFIGURATION DEPENDENCIES ---
+fmt.Println()
+fmt.Printf("%s%s[4] Configuration Dependencies%s\n", colorBold, colorCyan, colorReset)
+
+if len(result.ConfigMaps) == 0 {
+	fmt.Printf(
+		"  %sNo ConfigMap dependencies detected%s\n",
+		colorDim,
+		colorReset,
+	)
+} else {
+	for _, configMap := range result.ConfigMaps {
+		fmt.Printf(
+			"  └── %sConfigMap/%s%s\n",
+			colorBold,
+			configMap.Name,
+			colorReset,
+		)
+	}
+}
+
+// --- 7. SECRET DEPENDENCIES ---
+fmt.Println()
+fmt.Printf("%s%s[5] Secret Dependencies%s\n", colorBold, colorCyan, colorReset)
+
+if len(result.Secrets) == 0 {
+	fmt.Printf(
+		"  %sNo Secret dependencies detected%s\n",
+		colorDim,
+		colorReset,
+	)
+} else {
+	for _, secret := range result.Secrets {
+		fmt.Printf(
+			"  └── %sSecret/%s%s\n",
+			colorBold,
+			secret.Name,
+			colorReset,
+		)
+	}
+}
+
 	// --- 6. DYNAMIC BLAST RADIUS RADAR SYSTEM ---
 	fmt.Println()
 	fmt.Printf("%s--------------------------------------------------------%s\n", colorDim, colorReset)
