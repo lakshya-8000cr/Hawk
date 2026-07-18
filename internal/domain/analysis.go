@@ -12,5 +12,6 @@ type DeploymentAnalysis struct {
 	Impact      *ImpactReport
 	ConfigMaps []ConfigMap
     Secrets    []Secret
+	PersistentVolumeClaims []PersistentVolumeClaim
 }
-// typically micrservice behaviour
+// typicall micrservice behaviour

@@ -242,6 +242,34 @@ if len(result.Secrets) == 0 {
 	}
 }
 
+
+//pvc
+
+fmt.Println()
+fmt.Printf(
+	"%s%s[6] Storage Dependencies%s\n",
+	colorBold,
+	colorCyan,
+	colorReset,
+)
+
+if len(result.PersistentVolumeClaims) == 0 {
+	fmt.Printf(
+		"  %sNo PersistentVolumeClaim dependencies detected%s\n",
+		colorDim,
+		colorReset,
+	)
+} else {
+	for _, claim := range result.PersistentVolumeClaims {
+		fmt.Printf(
+			"  └── %sPersistentVolumeClaim/%s%s\n",
+			colorBold,
+			claim.Name,
+			colorReset,
+		)
+	}
+}
+
 	// --- 6. DYNAMIC BLAST RADIUS RADAR SYSTEM ---
 	fmt.Println()
 	fmt.Printf("%s--------------------------------------------------------%s\n", colorDim, colorReset)
