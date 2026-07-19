@@ -2,5 +2,5 @@
 dist/
 release/
 benchmark/
-hawk.yml
 verify/
+hawk.yml
