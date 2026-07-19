@@ -171,3 +171,64 @@ No multiple screenshots.
 | Secret | ✅ |
 | PersistentVolumeClaim | ✅ |
 | Ingress | ✅ |
+
+
+## Why not plain `kubectl`?
+
+`kubectl` is excellent for interacting with Kubernetes resources individually.
+
+Hawk complements `kubectl` by focusing on **resource relationships** rather than isolated objects, making dependency analysis significantly faster during production operations.
+
+| Capability | `kubectl` | Hawk |
+|------------|:---------:|:----:|
+| List Kubernetes resources | ✅ | ✅ |
+| Inspect individual objects | ✅ | ✅ |
+| Automatic dependency discovery | ❌ | ✅ |
+| Ownership traversal | ❌ | ✅ |
+| Unified dependency graph | ❌ | ✅ |
+| Blast radius evaluation | ❌ | ✅ |
+| Production impact analysis | ❌ | ✅ |
+
+---
+## Design Goals
+
+Hawk was built around a small set of engineering principles:
+
+- **Zero Cluster Footprint** — No agents, controllers, CRDs, or admission webhooks.
+- **Read-only by Design** — Cluster resources are never modified.
+- **Native Kubernetes APIs** — Built on the official `client-go` library.
+- **Deterministic Discovery** — Relationships are derived from Kubernetes metadata instead of heuristics.
+- **Modular Architecture** — Independent collectors simplify maintenance and future extensions.
+- **Production-first** — Designed to support operational decision making before infrastructure changes.
+
+## Performance
+
+Hawk has been validated against a synthetic Kubernetes environment containing more than **3,000 Kubernetes resources**, including Deployments, ReplicaSets, Pods, Services, ConfigMaps, Secrets, PersistentVolumeClaims, and Ingresses.
+
+The dependency discovery pipeline performs read-only analysis using the Kubernetes API and is designed to scale efficiently for production environments.
+
+Detailed benchmarking methodology and results are available in [`docs/benchmark.md`](docs/benchmark.md).
+
+
+---
+## Documentation
+
+Additional technical documentation is available in the `docs/` directory.
+
+| Document | Description |
+|----------|-------------|
+| Architecture | High-level system architecture and execution flow |
+| Design Decisions | Engineering decisions and trade-offs |
+| Installation | Platform-specific installation instructions |
+| Benchmarks | Performance evaluation methodology and results |
+| Internals | Dependency discovery pipeline and package structure |
+
+
+---
+## Contributions
+
+Contributions are welcome.
+
+If you discover a bug, have an idea for an enhancement, or would like to contribute code, please open an issue or submit a pull request.
+
+Please review the contribution guidelines before submitting changes.
