@@ -232,3 +232,7 @@ Contributions are welcome.
 If you discover a bug, have an idea for an enhancement, or would like to contribute code, please open an issue or submit a pull request.
 
 Please review the contribution guidelines before submitting changes.
+
+## License
+
+This project is licensed under the MIT License. See the [`LICENSE`](LICENSE). file for details.
