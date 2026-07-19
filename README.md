@@ -217,11 +217,11 @@ Additional technical documentation is available in the `docs/` directory.
 
 | Document | Description |
 |----------|-------------|
-| Architecture | High-level system architecture and execution flow |
-| Design Decisions | Engineering decisions and trade-offs |
-| Installation | Platform-specific installation instructions |
-| Benchmarks | Performance evaluation methodology and results |
-| Internals | Dependency discovery pipeline and package structure |
+| Architecture | High-level system architecture and execution flow [`docs/architecture.md`](docs/architecture.md)
+| Design Decisions | Engineering decisions and trade-offs [`docs/design-decision.md`](docs/design-decision.md)
+| Installation | Platform-specific installation instructions [`docs/installation.md`](docs/installation.md)
+| Benchmarks | Performance evaluation methodology and results [`docs/benchmark.md`](docs/benchmark.md)
+| Internals | Dependency discovery pipeline and package structure [`docs/internals.md`](docs/internals.md)
 
 
 ---
