@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="img/Screenshot 2026-07-16 223815.png" alt="Hawk Banner" width="100%">
+  <img src="img/Screenshot 2026-07-16 223815.png" alt="Hawk Banner" width="100%" height="80%">
 </p>
 
 # Hawk
@@ -79,7 +79,7 @@ The graph is then evaluated by the Blast Radius Engine, which identifies operati
 The final result is rendered as a structured terminal report that provides engineers with an immediate understanding of the workload's dependencies and potential operational impact.
 
 <p align="center">
-  <img src="img/hawk_cli_architecture_overview.svg" alt="Hawk Dependency Tree" width="90%" height="90%">
+  <img src="img/hawk-cli-architecture-overview.svg" alt="Hawk Dependency Tree" width="80%" height="90%">
 </p>
 
 
@@ -97,3 +97,77 @@ Key capabilities include:
 - Read-only analysis with zero modifications to cluster state
 - Native `kubectl` plugin integration
 - Cross-platform binaries with Krew support
+
+---
+## Installation
+
+### Install with Krew (Recommended)
+
+```bash
+kubectl krew install hawk
+```
+Verify the installation:
+```bash
+kubectl hawk version
+```
+
+## Manual Installation
+Download the latest release for your platform from the
+Releases page and place the binary in your system's PATH as a
+kubectl plugin.
+
+For detailed installation instructions, see the [Installation Guide](docs/installation.md).
+## Quick Start
+
+Analyze a Deployment:
+```bash
+kubectl hawk analyze deployment nginx -n production
+```
+Analyze a Deployment in the default namespace:
+
+```Bash
+kubectl hawk analyze deployment nginx
+```
+Version
+```bash
+kubectl hawk version
+```
+
+Delete Deployment safely
+```bash
+kubectl hawk delete deployment nginx
+```
+
+
+One screenshot.
+
+No multiple screenshots.
+
+---
+
+# Features
+
+```markdown
+
+-  Automatic dependency discovery for Kubernetes workloads
+-  Dependency graph construction using Kubernetes ownership relationships
+-  Detection of Services, ConfigMaps, Secrets, PersistentVolumeClaims, and Ingresses
+-  Blast radius evaluation for operational impact assessment
+-  Structured terminal reports optimized for production troubleshooting
+-  Read-only analysis with zero modifications to cluster resources
+-  Native `kubectl` plugin experience
+-  Cross-platform binaries for Linux, macOS, and Windows
+-  Krew-compatible distribution
+```
+## Supported Resources
+
+| Kubernetes Resource | Discovery |
+|---------------------|:---------:|
+| Deployment | ✅ |
+| ReplicaSet | ✅ |
+| Pod | ✅ |
+| Service | ✅ |
+| ConfigMap | ✅ |
+| Secret | ✅ |
+| PersistentVolumeClaim | ✅ |
+| Ingress | ✅ |
