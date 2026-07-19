@@ -23,7 +23,7 @@ Built for **Platform Engineers**, **DevOps Engineers**, **SREs**, and Kubernetes
 
 <div align="center">
 
-**Fast • Read-only • Zero Cluster Footprint • Krew Compatible**
+**Fast  • Krew Compatible**
 
 </div>
 
