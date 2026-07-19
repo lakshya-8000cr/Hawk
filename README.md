@@ -1,263 +1,99 @@
 <p align="center">
-  <img src="Screenshot 2026-07-16 223815.png" alt="Hawk Banner" width="100%">
+  <img src="img/Screenshot 2026-07-16 223815.png" alt="Hawk Banner" width="100%">
 </p>
 
-<h1 align="center">Hawk</h1>
+# Hawk
+
+> **Understand Kubernetes dependencies before production changes.**
+
+Hawk is a **dependency analysis engine** packaged as a native `kubectl` plugin that discovers relationships between Kubernetes resources and evaluates the operational impact of modifying or deleting a workload.
+
+Instead of manually tracing Deployments, ReplicaSets, Pods, Services, ConfigMaps, Secrets, PersistentVolumeClaims, and Ingresses, Hawk constructs a unified dependency graph and presents the workload's blast radius in a single report.
+
+Designed for **Platform Engineers**, **DevOps Engineers**, **Site Reliability Engineers (SREs)**, and Kubernetes operators.
 
 <p align="center">
-Dependency-aware Kubernetes impact analysis.
+  <!-- Demo GIF -->
 </p>
 
----
+<p align="center">
+  <strong>Fast • Read-only • Zero Cluster Footprint • Krew Compatible</strong>
+</p>
 
-## Overview
-
-Hawk is a Kubernetes CLI plugin that performs dependency-aware impact analysis before destructive cluster operations.
-
-Instead of inspecting Kubernetes resources independently, Hawk reconstructs runtime relationships between workloads by traversing ownership references, selector-based associations, and networking dependencies to generate a directed dependency graph representing the operational topology of the cluster.
-
-The resulting graph is used to calculate blast radius, dependency chains, and infrastructure risk before resources are modified or removed.
-
----
 
 ## Why Hawk?
 
-Deleting a Kubernetes resource is rarely an isolated operation.
+Kubernetes exposes infrastructure as individual API objects.
 
-A single Deployment may indirectly affect:
+Operators, however, think in terms of **applications**.
 
+A single production workload often spans multiple Kubernetes resources:
+
+- Deployments
 - ReplicaSets
 - Pods
 - Services
-- Ingress traffic
-- HorizontalPodAutoscalers
-- PodDisruptionBudgets
 - ConfigMaps
 - Secrets
-- Persistent Volumes
+- PersistentVolumeClaims
+- Ingresses
 
-Native `kubectl delete` performs the requested operation but provides little visibility into downstream operational impact.
+While `kubectl` allows you to inspect these resources individually, it does not explain **how they relate to one another** or what the operational impact of changing a workload might be.
 
-Hawk performs dependency discovery before deletion, allowing engineers to understand infrastructure relationships before modifying a running cluster.
+Hawk bridges that gap by automatically discovering ownership relationships, building a dependency graph, and presenting the complete blast radius of a workload before changes are made.
 
+<p align="center">
+  <img src="img/hawk-dependency-tree.svg" alt="Hawk Dependency Tree" width="90%" height="90%">
+</p>
 
----
+## The Problem
 
-## Features
+Modern Kubernetes applications are composed of interconnected resources distributed across multiple API groups.
 
-- Deployment dependency discovery
-- ReplicaSet ownership traversal
-- Pod ownership analysis
-- Service selector resolution
-- Ingress backend discovery
-- Directed dependency graph construction
-- Blast radius analysis
-- Risk classification
+A Deployment may own ReplicaSets and Pods, expose traffic through Services and Ingresses, consume ConfigMaps and Secrets, and depend on PersistentVolumeClaims for storage.
 
----
+Although Kubernetes stores these relationships internally, operators must manually correlate them using multiple `kubectl` commands before making production changes.
 
-## Architecture
+As clusters scale, manual dependency analysis becomes increasingly difficult, introducing unnecessary operational risk during deployments, upgrades, migrations, and incident response.
 
-```
-                     Kubernetes Cluster
-                            │
-                     Kubernetes API Server
-                            │
-                     client-go API Client
-                            │
-                  Repository Abstraction Layer
-                            │
-                  Resource Discovery Engine
-                            │
-                 Directed Dependency Graph
-                            │
-                  Blast Radius Analyzer
-                            │
-                     Terminal Renderer
-```
+Before deleting or modifying a workload, engineers need clear answers to questions such as:
+
+- Which Pods belong to this Deployment?
+- Which Services expose these Pods?
+- Is the workload externally accessible through an Ingress?
+- Which ConfigMaps and Secrets are consumed?
+- Does it rely on persistent storage?
+- What is the overall operational blast radius?
+
+Answering these questions manually is slow, repetitive, and error-prone.
 
 ---
+## The Solution
 
-## Dependency Graph
+Hawk performs dependency-aware analysis directly against the Kubernetes API using the official `client-go` library.
 
-```
-                 Ingress
-                    │
-              ROUTES_TO
-                    │
-                 Service
-                    │
-               SELECTS
-                    │
-                   Pod
-                    │
-                 OWNED BY
-                    │
-               ReplicaSet
-                    │
-                 OWNED BY
-                    │
-               Deployment
-```
+Starting from a target workload, Hawk recursively traverses Kubernetes ownership relationships, discovers dependent resources, and constructs an internal dependency graph representing the application's topology.
 
-Unlike ownership trees, Hawk models Kubernetes objects as graph vertices connected through semantic relationships, enabling graph traversal for dependency analysis and future graph-based reasoning.
+The graph is then evaluated by the Blast Radius Engine, which identifies operational dependencies such as exposed services, persistent storage, configuration resources, and sensitive secrets.
 
----
+The final result is rendered as a structured terminal report that provides engineers with an immediate understanding of the workload's dependencies and potential operational impact.
 
-## Installation
+<p align="center">
+  <img src="img/hawk_cli_architecture_overview.svg" alt="Hawk Dependency Tree" width="90%" height="90%">
+</p>
 
-### Build from source
 
-```bash
-git clone https://github.com/lakshya-8000cr/Hawk
+## Core Capabilities
 
-cd Hawk
+Hawk provides a dependency-centric view of Kubernetes workloads through a native `kubectl` experience.
 
-go build -o kubectl-hawk
-```
+Key capabilities include:
 
-Linux
-
-```bash
-sudo mv kubectl-hawk /usr/local/bin/
-```
-
-Windows
-
-Move `kubectl-hawk.exe` into any directory present in your `PATH`.
-
-Verify installation
-
-```bash
-kubectl plugin list
-
-kubectl hawk --help
-```
-
----
-
-## Usage
-
-Analyze a Deployment
-
-```bash
-kubectl hawk analyze deployment frontend
-```
-
-Specify namespace
-
-```bash
-kubectl hawk analyze deployment frontend \
-    --namespace production
-```
-
----
-
-## Example Output
-
-```text
-HAWK   Impact Analysis
-
-Target:
-Deployment/frontend
-
-Directly owned
-
-├── ReplicaSet/frontend-84dcb97
-│
-└── Pod/frontend-84dcb97-52hf2
-
-Referenced by
-
-└── Service/frontend
-
-Traffic Exposure
-
-└── Ingress/frontend
-
-Blast Radius
-
-Risk: HIGH
-
-External traffic reaches this workload.
-```
-
----
-
-## Design Principles
-
-### Graph-first analysis
-
-Infrastructure relationships are modeled as directed graph edges rather than recursively traversed resource trees.
-
-### Repository abstraction
-
-Kubernetes resource acquisition is isolated behind repository interfaces, allowing alternate transport implementations without modifying domain logic.
-
-### Domain isolation
-
-Business logic operates on internal domain models instead of Kubernetes SDK objects, reducing framework coupling.
-
-### Layered architecture
-
-```
-CLI
-
-↓
-
-Analyzer
-
-↓
-
-Repositories
-
-↓
-
-client-go
-
-↓
-
-Kubernetes API
-```
-
-Each layer owns a single responsibility.
-
----
-
-## Technology
-
-- Go
-- Cobra
-- Kubernetes client-go
-- Directed Graph Model
-- Repository Pattern
-- Domain-driven Design
-- Layered Architecture
-
----
-
-## Roadmap
-
-- [x] Deployment analysis
-- [x] ReplicaSet traversal
-- [x] Pod discovery
-- [x] Service dependency discovery
-- [x] Ingress dependency discovery
-- [x] Blast radius analysis
-
-Upcoming
-
-- [ ] HPA dependency analysis
-- [ ] PodDisruptionBudget support
-- [ ] ConfigMap relationships
-- [ ] Secret relationships
-- [ ] PVC dependency analysis
-- [ ] Interactive delete confirmation
-- [ ] Graph export
-- [ ] Krew distribution
-
----
-
-## License
-
-MIT
+- Automatic dependency discovery across supported Kubernetes resources
+- Ownership traversal using Kubernetes `OwnerReferences`
+- Dependency graph construction for workload analysis
+- Blast radius evaluation for operational impact assessment
+- Detection of Services, Ingresses, ConfigMaps, Secrets, and PersistentVolumeClaims
+- Read-only analysis with zero modifications to cluster state
+- Native `kubectl` plugin integration
+- Cross-platform binaries with Krew support
