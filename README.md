@@ -203,7 +203,7 @@ Detailed benchmarking methodology and results are available in [`docs/benchmark.
 | Document | Description |
 |---|---|
 | [Architecture](docs/architecture.md) | High-level system architecture and execution flow |
-| [Design Decisions](docs/design-decision.md) | Engineering decisions and trade-offs |
+| [Design Decisions](docs/design-decisions.md) | Engineering decisions and trade-offs |
 | [Installation](docs/installation.md) | Platform-specific installation instructions |
 | [Benchmarks](docs/benchmark.md) | Performance evaluation methodology and results |
 | [Internals](docs/internals.md) | Dependency discovery pipeline and package structure |
