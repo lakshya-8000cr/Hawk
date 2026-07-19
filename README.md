@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="img/Screenshot 2026-07-16 223815.png" alt="Hawk Banner" width="100%">
+  <img src="img/Screenshot 2026-07-19 213854.png" alt="Hawk Banner" width="100%" height="90%">
 </p>
 
 <div align="center">
@@ -139,7 +139,7 @@ kubectl hawk delete deployment nginx
 ```
 
 <p align="center">
-  <img src="img/Screenshot 2026-07-16 223815.png" alt="Hawk CLI in action" width="90%">
+  <img src="img/Screenshot 2026-07-19 213854.png" alt="Hawk CLI in action" width="90%">
 </p>
 
 ## Features
